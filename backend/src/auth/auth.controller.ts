@@ -1,8 +1,9 @@
-import { Controller, Post, Body, Res, HttpStatus, Req } from '@nestjs/common';
+import { Controller, Post, Body, Res, HttpStatus, Req, Get } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { Request, Response } from 'express';
 import { SignUpDto } from './dto/signup.dto';
 import { SignInDto } from './dto/signin.dto';
+import * as jwt from 'jsonwebtoken';
 
 @Controller('auth')
 export class AuthController {
@@ -51,6 +52,22 @@ export class AuthController {
       return res.status(HttpStatus.OK).json({ message: 'Sign-out successful' });
     } catch (error) {
       return res.status(HttpStatus.UNAUTHORIZED).json({ message: error.message });
+    }
+  }
+
+  @Get('check')
+  async checkAuth(@Req() req: Request, @Res() res: Response) {
+    const accessToken = req.cookies?.accessToken;
+
+    if (!accessToken) {
+      return res.status(HttpStatus.UNAUTHORIZED).json({ message: 'Not authenticated' });
+    }
+
+    try {
+      jwt.verify(accessToken, process.env.JWT_SECRET);
+      return res.status(HttpStatus.OK).json({ message: 'Authenticated' });
+    } catch (error) {
+      return res.status(HttpStatus.UNAUTHORIZED).json({ message: 'Invalid or expired access token' });
     }
   }
 }
